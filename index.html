@@ -42,9 +42,15 @@
             background: var(--bg);
             color: var(--text);
             font-family: var(--font);
-            width: 100%;
-            height: 100vh;
-            height: 100dvh;
+            /* Pin the page to the browser's real layout viewport. Unlike 100dvh,
+               fixed inset sizing is correct on the very first frame in browsers
+               that restore a window at a non-default zoom level. */
+            position: fixed;
+            inset: 0;
+            width: auto;
+            height: auto;
+            min-width: 0;
+            min-height: 0;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -63,9 +69,20 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-            transform: scale(var(--app-scale, 1));
+            /* A conservative first-paint fallback for short desktop windows.
+               JavaScript replaces this with the exact fitted value immediately. */
+            --app-scale: 1;
+            transform: scale(var(--app-scale));
             transform-origin: top center;
             will-change: transform;
+        }
+
+        @media (max-height: 950px) and (min-width: 801px) {
+            .app-container { --app-scale: 0.9; }
+        }
+
+        @media (max-height: 850px) and (min-width: 801px) {
+            .app-container { --app-scale: 0.82; }
         }
 
         .header {
@@ -335,7 +352,9 @@
         canvas {
             border-radius: var(--radius-sm);
             display: block;
+            width: 500px;
             max-width: 100%;
+            aspect-ratio: 1 / 1;
             height: auto;
             background: #0b0f16;
             border: 1px solid var(--border);
@@ -612,34 +631,110 @@
             }
 
             let fitFrame = null;
+            let fitVerificationFrame = null;
+            let fitTimer = null;
+
+            function getViewportFitMeasurements() {
+                const bodyStyle = getComputedStyle(document.body);
+                const horizontalPadding = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
+                const verticalPadding = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+
+                // Some browsers initially restore visualViewport with the wrong
+                // height until a resize/fullscreen event. Taking the smallest
+                // positive value prevents that stale, oversized reading from
+                // allowing the app to extend below the visible window.
+                const widthCandidates = [
+                    window.innerWidth,
+                    document.documentElement.clientWidth,
+                    document.body.clientWidth,
+                    window.visualViewport && window.visualViewport.width
+                ].filter(value => Number.isFinite(value) && value > 0);
+
+                const heightCandidates = [
+                    window.innerHeight,
+                    document.documentElement.clientHeight,
+                    document.body.clientHeight,
+                    window.visualViewport && window.visualViewport.height
+                ].filter(value => Number.isFinite(value) && value > 0);
+
+                const viewportWidth = Math.min(...widthCandidates);
+                const viewportHeight = Math.min(...heightCandidates);
+
+                // Leave a small buffer for fractional browser zoom and rounding.
+                return {
+                    availableWidth: Math.max(1, Math.floor(viewportWidth - horizontalPadding - 8)),
+                    availableHeight: Math.max(1, Math.floor(viewportHeight - verticalPadding - 8))
+                };
+            }
+
+            function setAppScale(scale) {
+                appContainer.style.setProperty('--app-scale', Math.max(0.1, Math.min(1, scale)).toFixed(5));
+                // Force the transform to be reflected in the following rectangle.
+                void appContainer.getBoundingClientRect();
+            }
+
+            function verifyViewportFit(scale, availableWidth, availableHeight) {
+                let fittedScale = scale;
+
+                // Check the rendered rectangle rather than trusting only the
+                // natural-size calculation. This catches browser zoom rounding,
+                // late font metrics and initially stale viewport information.
+                for (let pass = 0; pass < 4; pass++) {
+                    setAppScale(fittedScale);
+                    const rect = appContainer.getBoundingClientRect();
+                    const widthRatio = availableWidth / Math.max(1, rect.width);
+                    const heightRatio = availableHeight / Math.max(1, rect.height);
+                    const correction = Math.min(1, widthRatio, heightRatio);
+
+                    if (correction >= 0.998) break;
+                    fittedScale *= correction * 0.995;
+                }
+
+                setAppScale(fittedScale);
+                return fittedScale;
+            }
+
+            function fitViewportNow() {
+                if (!appContainer || !appContainer.isConnected) return;
+
+                // Measure at natural size.
+                setAppScale(1);
+
+                const naturalWidth = Math.max(1, appContainer.scrollWidth, appContainer.offsetWidth);
+                const naturalHeight = Math.max(1, appContainer.scrollHeight, appContainer.offsetHeight);
+                const { availableWidth, availableHeight } = getViewportFitMeasurements();
+                let scale = Math.min(1, availableWidth / naturalWidth, availableHeight / naturalHeight);
+
+                scale = verifyViewportFit(scale, availableWidth, availableHeight);
+                drawCanvas();
+
+                // Canvas redraws and font rasterization should not affect layout,
+                // but verify once more so the page can never finish below the fold.
+                verifyViewportFit(scale, availableWidth, availableHeight);
+            }
 
             function scheduleViewportFit() {
                 if (fitFrame !== null) cancelAnimationFrame(fitFrame);
+                if (fitVerificationFrame !== null) cancelAnimationFrame(fitVerificationFrame);
+                if (fitTimer !== null) clearTimeout(fitTimer);
 
                 fitFrame = requestAnimationFrame(() => {
                     fitFrame = null;
+                    fitViewportNow();
 
-                    // Measure the app at its natural size, then shrink only if needed.
-                    appContainer.style.setProperty('--app-scale', '1');
-
-                    const bodyStyle = getComputedStyle(document.body);
-                    const horizontalPadding = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
-                    const verticalPadding = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
-                    const availableWidth = Math.max(1, window.innerWidth - horizontalPadding);
-                    const availableHeight = Math.max(1, window.innerHeight - verticalPadding);
-                    const naturalWidth = Math.max(1, appContainer.scrollWidth);
-                    const naturalHeight = Math.max(1, appContainer.scrollHeight);
-                    const scale = Math.min(
-                        1,
-                        availableWidth / naturalWidth,
-                        availableHeight / naturalHeight
-                    );
-
-                    appContainer.style.setProperty('--app-scale', scale.toFixed(4));
-
-                    // Redraw after fitting so the canvas remains sharp and aligned.
-                    drawCanvas();
+                    fitVerificationFrame = requestAnimationFrame(() => {
+                        fitVerificationFrame = null;
+                        fitViewportNow();
+                    });
                 });
+
+                // Some browsers finalize the visual viewport after the first paint.
+                // This timer does not rely on animation frames, so it also handles
+                // local-file startup and restored/background tabs reliably.
+                fitTimer = setTimeout(() => {
+                    fitTimer = null;
+                    fitViewportNow();
+                }, 120);
             }
 
             function clearValidationErrors() {
@@ -1192,16 +1287,41 @@
                 updateAll();
             });
 
-            // Resize handling
+            // Refit for browser resizes and any content-size changes.
             let resizeTimeout;
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(scheduleViewportFit, 150);
+                resizeTimeout = setTimeout(scheduleViewportFit, 100);
+            });
+            window.addEventListener('orientationchange', scheduleViewportFit);
+
+            if ('ResizeObserver' in window) {
+                const appResizeObserver = new ResizeObserver(() => scheduleViewportFit());
+                appResizeObserver.observe(appContainer);
+            }
+
+            window.addEventListener('load', fitViewportNow, { once: true });
+            window.addEventListener('pageshow', fitViewportNow);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) fitViewportNow();
             });
 
-            // Initial render
-            updateAll();
-            inputX.focus();
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', scheduleViewportFit);
+                window.visualViewport.addEventListener('scroll', scheduleViewportFit);
+            }
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(fitViewportNow);
+            }
+
+            // Initial render. Fit synchronously, then re-check while the browser
+            // finishes restoring its viewport and zoom state.
+            updateTable();
+            updateResults();
+            drawCanvas();
+            fitViewportNow();
+            [0, 50, 150, 350, 750, 1500].forEach(delay => setTimeout(fitViewportNow, delay));
         })();
     </script>
 </body>
