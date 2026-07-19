@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Stronghold Triangulator</title>
+	<link rel="icon" type="image/png" href="Icon.png?">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface-elevated: #1c2333;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #a371f7;
+            --accent-glow: #7c3aed;
+            --gold: #f0c040;
+            --gold-glow: #f59e0b;
+            --red: #f85149;
+            --green: #3fb950;
+            --blue: #58a6ff;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+            --font: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            background-image:
+                radial-gradient(ellipse at 30% 20%, rgba(120, 80, 220, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(240, 160, 40, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 80%, rgba(100, 60, 200, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 28px 24px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            border-radius: 0 0 50% 50%;
+        }
+        .header .icon-row {
+            font-size: 40px;
+            margin-bottom: 6px;
+            letter-spacing: 6px;
+        }
+        .header h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #e2d5ff, #c4b5fd, #f0d080);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            letter-spacing: 0.2px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .panel-left {
+            flex: 1 1 380px;
+            min-width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .panel-right {
+            flex: 1 1 500px;
+            min-width: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+        }
+
+        .form-section h3 {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1 1 100px;
+            min-width: 80px;
+        }
+        .input-group label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .input-group input {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: var(--font);
+            transition: var(--transition);
+            width: 100%;
+            outline: none;
+        }
+        .input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(163, 113, 247, 0.12);
+        }
+        .input-group input::placeholder {
+            color: #484f5a;
+            font-family: var(--font);
+            font-size: 0.8rem;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            letter-spacing: 0.2px;
+            transition: var(--transition);
+            font-family: var(--font);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-add {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            flex: 0 0 auto;
+            min-width: 70px;
+            justify-content: center;
+        }
+        .btn-add:hover {
+            background: #8b5cf6;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+            transform: translateY(-1px);
+        }
+        .btn-add:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .btn-outline:hover {
+            border-color: #555;
+            color: var(--text);
+            background: var(--surface-elevated);
+        }
+        .btn-danger {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--red);
+            font-size: 0.78rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-danger:hover {
+            background: rgba(248, 81, 73, 0.1);
+            border-color: rgba(248, 81, 73, 0.3);
+        }
+
+        /* Validation feedback */
+        .input-error {
+            border-color: var(--red) !important;
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(4px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(2px); }
+        }
+        .error-hint {
+            font-size: 0.75rem;
+            color: var(--red);
+            margin-top: 4px;
+            display: none;
+        }
+        .input-error + .error-hint {
+            display: block;
+        }
+
+        .table-wrap {
+            max-height: 280px;
+            overflow-y: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        .table-wrap::-webkit-scrollbar {
+            width: 5px;
+        }
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        table th {
+            background: var(--surface-elevated);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.7rem;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        table td {
+            padding: 9px 8px;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+            font-family: var(--font);
+            font-size: 0.82rem;
+        }
+        table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .color-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        canvas {
+            border-radius: var(--radius-sm);
+            display: block;
+            max-width: 100%;
+            height: auto;
+            background: #0b0f16;
+            border: 1px solid var(--border);
+        }
+
+        .results-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+        .results-section.has-result {
+            border-color: rgba(240, 192, 64, 0.4);
+            box-shadow: 0 0 30px rgba(240, 160, 40, 0.06);
+        }
+        .result-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .result-locations {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result-location-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            min-width: 210px;
+        }
+        .result-location-card.stronghold-card {
+            border-color: rgba(240, 192, 64, 0.25);
+        }
+        .result-location-card.nether-card {
+            border-color: rgba(163, 113, 247, 0.35);
+        }
+        .result-coords {
+            font-family: var(--font);
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--gold);
+        }
+        .result-coords .label-small,
+        .result-location-card .label-small {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .nether-coords {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #c4b5fd;
+        }
+        .portal-hint {
+            display: block;
+            margin-top: 3px;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-weight: 400;
+            letter-spacing: 0;
+        }
+        .result-accuracy {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface-elevated);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        .accuracy-good { color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
+        .accuracy-ok { color: #f0c040; border: 1px solid rgba(240, 192, 64, 0.3); }
+        .accuracy-poor { color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); }
+        .accuracy-none { color: var(--text-secondary); border: 1px solid var(--border); }
+        .result-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            flex-basis: 100%;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+        .result-empty {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+            width: 100%;
+            padding: 10px 0;
+        }
+
+        .info-banner {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 4px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+        .info-banner code {
+            background: var(--surface-elevated);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--font);
+            font-size: 0.72rem;
+        }
+
+        @media (max-width: 800px) {
+            .main-content { flex-direction: column; }
+            .panel-left, .panel-right { flex: 1 1 auto; min-width: auto; }
+            .panel-right { min-height: 380px; }
+            .header h1 { font-size: 1.35rem; }
+            .result-coords { font-size: 1.1rem; }
+            .input-row { flex-direction: column; }
+            .btn-add { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>Stronghold Triangulator</h1>
+            <p class="subtitle">Pinpoint the End Portal using Eye of Ender bearings</p>
+        </header>
+
+        <div class="main-content">
+            <div class="panel panel-left">
+                <div class="form-section">
+                    <h3>Add Observation</h3>
+                    <div class="input-row" id="inputRow">
+                        <div class="input-group">
+                            <label for="inputX">X Coordinate</label>
+                            <input type="number" id="inputX" placeholder="e.g. 1250" step="any">
+                            <span class="error-hint">Required</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="inputZ">Z Coordinate</label>
+                            <input type="number" id="inputZ" placeholder="e.g. -340" step="any">
+                            <span class="error-hint">Required</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="inputAngle">F3 Angle (°)</label>
+                            <input type="number" id="inputAngle" placeholder="0 = South" step="any" min="-180" max="360">
+                            <span class="error-hint">Required</span>
+                        </div>
+                        <button class="btn btn-add" id="btnAdd" title="Add observation (Enter)">+ Add</button>
+                    </div>
+                    <div style="margin-top:6px;font-size:0.7rem;color:var(--text-secondary);">
+                        Angle: <code>0°</code> = South, <code>90°</code> = West, <code>180°</code> = North, <code>270°</code> = East
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 style="font-size:0.9rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-secondary);font-weight:600;">Observations</h3>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-sm btn-outline" id="btnExample">Example</button>
+                        <button class="btn btn-sm btn-outline" id="btnClear" style="color:var(--red);border-color:rgba(248,81,73,0.3);">Clear All</button>
+                    </div>
+                </div>
+                <div class="table-wrap" id="tableWrap">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>X</th><th>Z</th><th>Angle</th><th></th></tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="no-data-row"><td colspan="5" class="no-data">No observations yet — add your first one above</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel panel-right" id="canvasPanel">
+                <canvas id="vizCanvas" width="500" height="500"></canvas>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div id="resultsContent" class="result-empty">
+                Add at least <strong>2 observations</strong> from different locations to triangulate the stronghold.
+            </div>
+        </div>
+
+        <div class="info-banner">
+            💡 For best results, take measurements from <strong>3+ locations</strong> spread far apart (100+ blocks) with varied angles.
+            The F3 debug screen shows your facing angle to one decimal place.
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ────────────────────────────────────
+            // DOM refs
+            // ────────────────────────────────────
+            const inputX = document.getElementById('inputX');
+            const inputZ = document.getElementById('inputZ');
+            const inputAngle = document.getElementById('inputAngle');
+            const btnAdd = document.getElementById('btnAdd');
+            const btnClear = document.getElementById('btnClear');
+            const btnExample = document.getElementById('btnExample');
+            const tableBody = document.getElementById('tableBody');
+            const tableWrap = document.getElementById('tableWrap');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            const canvas = document.getElementById('vizCanvas');
+            const ctx = canvas.getContext('2d');
+            const canvasPanel = document.getElementById('canvasPanel');
+
+            // ────────────────────────────────────
+            // State
+            // ────────────────────────────────────
+            let observations = [];
+
+            const LINE_COLORS = [
+                '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24',
+                '#a29bfe', '#fd79a8', '#00b894', '#e17055',
+                '#5dade2', '#f1948a', '#52de97', '#c39bd3'
+            ];
+
+            // Safe fallback for canvas font (avoid computed style quirks)
+            const CANVAS_FONT_FAMILY = 'Segoe UI, Inter, system-ui, -apple-system, sans-serif';
+
+            // ────────────────────────────────────
+            // Helpers
+            // ────────────────────────────────────
+            function normalizeAngle(deg) {
+                let a = deg % 360;
+                if (a < 0) a += 360;
+                return a;
+            }
+
+            function degToRad(deg) {
+                return (normalizeAngle(deg) * Math.PI) / 180;
+            }
+
+            function getColor(index) {
+                return LINE_COLORS[index % LINE_COLORS.length];
+            }
+
+            function clearValidationErrors() {
+                [inputX, inputZ, inputAngle].forEach(inp => inp.classList.remove('input-error'));
+            }
+
+            function showValidationErrors(missingFields) {
+                missingFields.forEach(field => field.classList.add('input-error'));
+                // Remove error class after animation
+                setTimeout(() => {
+                    missingFields.forEach(field => field.classList.remove('input-error'));
+                }, 1500);
+            }
+
+            // ────────────────────────────────────
+            // Triangulation math (unchanged, robust)
+            // ────────────────────────────────────
+            function computeTriangulation(obs) {
+                if (obs.length < 2) return null;
+                const n = obs.length;
+                const thetas = obs.map(o => degToRad(o.angleDeg));
+
+                if (n === 2) {
+                    const [t1, t2] = thetas;
+                    const c1 = Math.cos(t1) * obs[0].x + Math.sin(t1) * obs[0].z;
+                    const c2 = Math.cos(t2) * obs[1].x + Math.sin(t2) * obs[1].z;
+                    const det = Math.cos(t1) * Math.sin(t2) - Math.sin(t1) * Math.cos(t2);
+                    if (Math.abs(det) < 1e-9) {
+                        return {
+                            x: null, z: null, error: null, residuals: null, rms: null,
+                            condMessage: 'Lines are nearly parallel — cannot triangulate.',
+                            isParallel: true, n: 2
+                        };
+                    }
+                    const x = (c1 * Math.sin(t2) - c2 * Math.sin(t1)) / det;
+                    const z = (Math.cos(t1) * c2 - Math.cos(t2) * c1) / det;
+                    const residuals = [
+                        Math.abs(Math.cos(t1) * x + Math.sin(t1) * z - c1),
+                        Math.abs(Math.cos(t2) * x + Math.sin(t2) * z - c2)
+                    ];
+                    const rms = Math.sqrt((residuals[0]**2 + residuals[1]**2) / 2);
+                    return {
+                        x, z, error: null, residuals, rms,
+                        condMessage: 'Accuracy unknown with only 2 observations. Add a third for an error estimate.',
+                        isParallel: false, n: 2, cov: null, sigmaSq: null
+                    };
+                }
+
+                // n >= 3: least squares
+                let ATA00=0, ATA01=0, ATA11=0, ATb0=0, ATb1=0;
+                const cosVals=[], sinVals=[], cVals=[];
+                for (let i=0; i<n; i++) {
+                    const ct = Math.cos(thetas[i]);
+                    const st = Math.sin(thetas[i]);
+                    const ci = ct * obs[i].x + st * obs[i].z;
+                    cosVals.push(ct);
+                    sinVals.push(st);
+                    cVals.push(ci);
+                    ATA00 += ct*ct;
+                    ATA01 += ct*st;
+                    ATA11 += st*st;
+                    ATb0 += ct*ci;
+                    ATb1 += st*ci;
+                }
+                const det = ATA00*ATA11 - ATA01*ATA01;
+                if (Math.abs(det) < 1e-12) {
+                    return {
+                        x: null, z: null, error: null, residuals: null, rms: null,
+                        condMessage: 'Observations have insufficient angular spread.',
+                        isParallel: true, n, cov: null, sigmaSq: null
+                    };
+                }
+                const x = (ATA11*ATb0 - ATA01*ATb1) / det;
+                const z = (ATA00*ATb1 - ATA01*ATb0) / det;
+                const residuals = [];
+                let sumSqRes = 0;
+                for (let i=0; i<n; i++) {
+                    const r = Math.abs(cosVals[i]*x + sinVals[i]*z - cVals[i]);
+                    residuals.push(r);
+                    sumSqRes += r*r;
+                }
+                const rms = Math.sqrt(sumSqRes/n);
+                const sigmaSq = sumSqRes / (n-2);
+                const invATA00 = ATA11/det;
+                const invATA01 = -ATA01/det;
+                const invATA11 = ATA00/det;
+                const covXX = sigmaSq * invATA00;
+                const covXZ = sigmaSq * invATA01;
+                const covZZ = sigmaSq * invATA11;
+                const cov = { xx: covXX, xz: covXZ, zz: covZZ };
+                const traceCov = covXX + covZZ;
+                const error95 = 2.45 * Math.sqrt(Math.max(0, traceCov));
+                const diff = covXX - covZZ;
+                const disc = Math.sqrt(diff*diff + 4*covXZ*covXZ);
+                const eig1 = (covXX+covZZ+disc)/2;
+                const eig2 = Math.max(0, (covXX+covZZ-disc)/2);
+                const semiMajor = Math.sqrt(5.99 * Math.max(0, eig1));
+                const semiMinor = Math.sqrt(5.99 * Math.max(0, eig2));
+                let majorAngle = 0;
+                if (Math.abs(covXZ) > 1e-12 || Math.abs(covXX-eig1) > 1e-12) {
+                    majorAngle = Math.atan2(eig1 - covXX, covXZ);
+                }
+
+                let condMessage = '';
+                if (rms < 3) condMessage = 'Excellent convergence — stronghold very close to estimate.';
+                else if (rms < 15) condMessage = 'Good convergence — stronghold likely within ~20 blocks.';
+                else if (rms < 40) condMessage = 'Moderate convergence — expect some searching around the estimate.';
+                else condMessage = 'Lines diverge significantly. Take more measurements for better accuracy.';
+
+                const angles = thetas.map(t => normalizeAngle(t*180/Math.PI));
+                const angleSpread = computeAngularSpread(angles);
+                if (angleSpread < 15 && n >= 3) {
+                    condMessage += ' ⚠️ Narrow angular spread — measurements from similar directions reduce accuracy.';
+                }
+
+                return {
+                    x, z, error: error95, residuals, rms, condMessage, isParallel: false, n,
+                    cov, sigmaSq, semiMajor, semiMinor, majorAngle
+                };
+            }
+
+            function computeAngularSpread(anglesDeg) {
+                const sorted = [...anglesDeg].sort((a,b)=>a-b);
+                let maxGap = 0;
+                for (let i=1; i<sorted.length; i++) maxGap = Math.max(maxGap, sorted[i]-sorted[i-1]);
+                const wrapGap = 360 - sorted[sorted.length-1] + sorted[0];
+                maxGap = Math.max(maxGap, wrapGap);
+                return 360 - maxGap;
+            }
+
+            // ────────────────────────────────────
+            // Canvas drawing (fixed font)
+            // ────────────────────────────────────
+            function getBoundingBox(obs, result) {
+                let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
+                obs.forEach(o => { minX=Math.min(minX,o.x); maxX=Math.max(maxX,o.x); minZ=Math.min(minZ,o.z); maxZ=Math.max(maxZ,o.z); });
+                if (result && result.x!==null && result.z!==null) {
+                    minX=Math.min(minX,result.x); maxX=Math.max(maxX,result.x);
+                    minZ=Math.min(minZ,result.z); maxZ=Math.max(maxZ,result.z);
+                }
+                if (!isFinite(minX)) return { minX:-250, maxX:250, minZ:-250, maxZ:250, rangeX:500, rangeZ:500 };
+                let rangeX = maxX-minX, rangeZ = maxZ-minZ;
+                if (rangeX<80) rangeX=80;
+                if (rangeZ<80) rangeZ=80;
+                const padX=rangeX*0.35, padZ=rangeZ*0.35;
+                minX-=padX; maxX+=padX; minZ-=padZ; maxZ+=padZ;
+                rangeX=maxX-minX; rangeZ=maxZ-minZ;
+                const maxRange = Math.max(rangeX, rangeZ);
+                const cx=(minX+maxX)/2, cz=(minZ+maxZ)/2;
+                return {
+                    minX: cx-maxRange/2, maxX: cx+maxRange/2,
+                    minZ: cz-maxRange/2, maxZ: cz+maxRange/2,
+                    rangeX: maxRange, rangeZ: maxRange
+                };
+            }
+
+            function worldToCanvas(wx, wz, bbox, canvasW, canvasH, margin) {
+                const availW = canvasW - 2*margin, availH = canvasH - 2*margin;
+                const scaleX = availW / bbox.rangeX, scaleZ = availH / bbox.rangeZ;
+                const scale = Math.min(scaleX, scaleZ);
+                const usedW = bbox.rangeX*scale, usedH = bbox.rangeZ*scale;
+                const offsetX = margin + (availW-usedW)/2, offsetY = margin + (availH-usedH)/2;
+                const cx = (wx - bbox.minX)*scale + offsetX;
+                const cz = (wz - bbox.minZ)*scale + offsetY;
+                return { cx, cz, scale };
+            }
+
+            function drawCanvas() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const rect = canvas.getBoundingClientRect();
+                const displayW = rect.width || 500, displayH = rect.height || 500;
+                const internalW = Math.round(displayW*dpr), internalH = Math.round(displayH*dpr);
+                if (canvas.width !== internalW || canvas.height !== internalH) {
+                    canvas.width = internalW;
+                    canvas.height = internalH;
+                }
+
+                ctx.clearRect(0, 0, internalW, internalH);
+                const margin = 50*dpr;
+                const result = computeTriangulation(observations);
+                const bbox = getBoundingBox(observations, result);
+
+                // Background
+                ctx.fillStyle = '#0b0f16';
+                ctx.fillRect(0, 0, internalW, internalH);
+
+                // Grid
+                const gridStepWorld = Math.pow(10, Math.floor(Math.log10(bbox.rangeX)))/2;
+                const gridStep = Math.max(gridStepWorld, bbox.rangeX/30);
+                ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+                ctx.lineWidth = 1*dpr;
+                ctx.setLineDash([4*dpr, 8*dpr]);
+                const worldStep = gridStep;
+                let gx = Math.floor(bbox.minX/worldStep)*worldStep;
+                while (gx <= bbox.maxX) {
+                    const p = worldToCanvas(gx, 0, bbox, internalW, internalH, margin);
+                    ctx.beginPath();
+                    ctx.moveTo(p.cx, margin);
+                    ctx.lineTo(p.cx, internalH-margin);
+                    ctx.stroke();
+                    gx += worldStep;
+                }
+                let gz = Math.floor(bbox.minZ/worldStep)*worldStep;
+                while (gz <= bbox.maxZ) {
+                    const p = worldToCanvas(0, gz, bbox, internalW, internalH, margin);
+                    ctx.beginPath();
+                    ctx.moveTo(margin, p.cz);
+                    ctx.lineTo(internalW-margin, p.cz);
+                    ctx.stroke();
+                    gz += worldStep;
+                }
+                ctx.setLineDash([]);
+
+                // Border
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 1*dpr;
+                ctx.strokeRect(margin, margin, internalW-2*margin, internalH-2*margin);
+
+                // North indicator
+                const northX = margin + 20*dpr, northY = margin + 20*dpr;
+                ctx.fillStyle = '#e6edf3';
+                ctx.font = `${11*dpr}px ${CANVAS_FONT_FAMILY}`;
+                ctx.textAlign = 'center';
+                ctx.fillText('N ↑', northX, northY - 8*dpr);
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 1.5*dpr;
+                ctx.beginPath();
+                ctx.moveTo(northX, northY);
+                ctx.lineTo(northX, northY-10*dpr);
+                ctx.moveTo(northX-3*dpr, northY-7*dpr);
+                ctx.lineTo(northX, northY-10*dpr);
+                ctx.lineTo(northX+3*dpr, northY-7*dpr);
+                ctx.stroke();
+
+                // Scale bar
+                const scaleBarWorld = worldStep*2;
+                const scaleBarPixels = scaleBarWorld/bbox.rangeX * (internalW-2*margin);
+                const sbX = internalW - margin - 15*dpr - scaleBarPixels;
+                const sbY = internalH - margin - 20*dpr;
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 3*dpr;
+                ctx.beginPath();
+                ctx.moveTo(sbX, sbY);
+                ctx.lineTo(sbX+scaleBarPixels, sbY);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.font = `${9*dpr}px ${CANVAS_FONT_FAMILY}`;
+                ctx.textAlign = 'center';
+                ctx.fillText(`${Math.round(scaleBarWorld)} blocks`, sbX+scaleBarPixels/2, sbY-6*dpr);
+
+                // Draw rays and observation points
+                const rayExtendWorld = bbox.rangeX*2;
+                for (let i=0; i<observations.length; i++) {
+                    const obs = observations[i];
+                    const color = getColor(i);
+                    const theta = degToRad(obs.angleDeg);
+                    const dx = -Math.sin(theta);
+                    const dz = Math.cos(theta);
+
+                    const rayStart = worldToCanvas(obs.x, obs.z, bbox, internalW, internalH, margin);
+                    const rayEndWorldX = obs.x + dx*rayExtendWorld;
+                    const rayEndWorldZ = obs.z + dz*rayExtendWorld;
+                    const rayEnd = worldToCanvas(rayEndWorldX, rayEndWorldZ, bbox, internalW, internalH, margin);
+                    const rayBackWorldX = obs.x - dx*rayExtendWorld*0.15;
+                    const rayBackWorldZ = obs.z - dz*rayExtendWorld*0.15;
+                    const rayBack = worldToCanvas(rayBackWorldX, rayBackWorldZ, bbox, internalW, internalH, margin);
+
+                    ctx.strokeStyle = color;
+                    ctx.globalAlpha = 0.55;
+                    ctx.lineWidth = 1.8*dpr;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(rayStart.cx, rayStart.cz);
+                    ctx.lineTo(rayEnd.cx, rayEnd.cz);
+                    ctx.stroke();
+
+                    ctx.globalAlpha = 0.25;
+                    ctx.setLineDash([3*dpr, 6*dpr]);
+                    ctx.beginPath();
+                    ctx.moveTo(rayStart.cx, rayStart.cz);
+                    ctx.lineTo(rayBack.cx, rayBack.cz);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.globalAlpha = 1;
+
+                    const dotR = 6*dpr;
+                    ctx.fillStyle = color;
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 8*dpr;
+                    ctx.beginPath();
+                    ctx.arc(rayStart.cx, rayStart.cz, dotR, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1.5*dpr;
+                    ctx.beginPath();
+                    ctx.arc(rayStart.cx, rayStart.cz, dotR+1*dpr, 0, Math.PI*2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `bold ${10*dpr}px ${CANVAS_FONT_FAMILY}`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(i+1, rayStart.cx, rayStart.cz - dotR - 8*dpr);
+                }
+
+                // Draw stronghold estimate
+                if (result && result.x !== null && result.z !== null) {
+                    const sh = worldToCanvas(result.x, result.z, bbox, internalW, internalH, margin);
+                    if (result.cov && result.semiMajor > 0 && result.semiMinor > 0 && result.n >= 3) {
+                        const ellipseScale = 1/bbox.rangeX * (internalW-2*margin);
+                        const semiMajorPx = result.semiMajor * ellipseScale;
+                        const semiMinorPx = result.semiMinor * ellipseScale;
+                        ctx.save();
+                        ctx.translate(sh.cx, sh.cz);
+                        ctx.rotate(result.majorAngle);
+                        ctx.fillStyle = 'rgba(240,192,64,0.08)';
+                        ctx.strokeStyle = 'rgba(240,192,64,0.35)';
+                        ctx.lineWidth = 1.5*dpr;
+                        ctx.setLineDash([5*dpr, 5*dpr]);
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, Math.max(1,semiMajorPx), Math.max(1,semiMinorPx), 0, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.restore();
+                    } else if (result.n === 2 && result.rms !== null && result.rms < 100) {
+                        const circR = Math.max(8*dpr, 20*dpr);
+                        ctx.fillStyle = 'rgba(240,192,64,0.06)';
+                        ctx.strokeStyle = 'rgba(240,192,64,0.25)';
+                        ctx.lineWidth = 1*dpr;
+                        ctx.setLineDash([3*dpr, 6*dpr]);
+                        ctx.beginPath();
+                        ctx.arc(sh.cx, sh.cz, circR, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+
+                    const glowGrad = ctx.createRadialGradient(sh.cx, sh.cz, 0, sh.cx, sh.cz, 20*dpr);
+                    glowGrad.addColorStop(0, 'rgba(255,200,60,0.7)');
+                    glowGrad.addColorStop(0.4, 'rgba(240,160,30,0.3)');
+                    glowGrad.addColorStop(1, 'rgba(240,140,20,0)');
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(sh.cx, sh.cz, 20*dpr, 0, Math.PI*2);
+                    ctx.fill();
+
+                    const shR = 7*dpr;
+                    ctx.fillStyle = '#f0c040';
+                    ctx.shadowColor = '#f59e0b';
+                    ctx.shadowBlur = 16*dpr;
+                    ctx.beginPath();
+                    ctx.arc(sh.cx, sh.cz, shR, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2*dpr;
+                    ctx.beginPath();
+                    ctx.arc(sh.cx, sh.cz, shR+1.5*dpr, 0, Math.PI*2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `bold ${11*dpr}px ${CANVAS_FONT_FAMILY}`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Stronghold', sh.cx, sh.cz - shR - 14*dpr);
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                    ctx.font = `${9*dpr}px ${CANVAS_FONT_FAMILY}`;
+                    ctx.fillText(`(${result.x.toFixed(0)}, ${result.z.toFixed(0)})`, sh.cx, sh.cz + shR + 16*dpr);
+                }
+
+                if (observations.length === 1 && (!result || result.x === null)) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.font = `${13*dpr}px ${CANVAS_FONT_FAMILY}`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Add another observation to triangulate', internalW/2, internalH/2);
+                }
+                if (observations.length === 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.font = `${13*dpr}px ${CANVAS_FONT_FAMILY}`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Add observations to see the map', internalW/2, internalH/2);
+                }
+            }
+
+            // ────────────────────────────────────
+            // UI updates
+            // ────────────────────────────────────
+            function updateTable() {
+                tableBody.innerHTML = '';
+                if (observations.length === 0) {
+                    const row = document.createElement('tr');
+                    row.className = 'no-data-row';
+                    row.innerHTML = '<td colspan="5" class="no-data">No observations yet — add your first one above</td>';
+                    tableBody.appendChild(row);
+                } else {
+                    observations.forEach((obs, i) => {
+                        const row = document.createElement('tr');
+                        const color = getColor(i);
+                        row.innerHTML = `
+                            <td><span class="color-dot" style="background:${color};"></span>${i+1}</td>
+                            <td>${obs.x.toFixed(1)}</td>
+                            <td>${obs.z.toFixed(1)}</td>
+                            <td>${normalizeAngle(obs.angleDeg).toFixed(1)}°</td>
+                            <td><button class="btn-danger" data-index="${i}" title="Remove">✕</button></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    tableBody.querySelectorAll('.btn-danger').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const idx = parseInt(this.getAttribute('data-index'));
+                            observations.splice(idx, 1);
+                            updateAll();
+                        });
+                    });
+                }
+                tableWrap.scrollTop = tableWrap.scrollHeight;
+            }
+
+            function updateResults() {
+                const result = computeTriangulation(observations);
+                if (!result || result.x === null || result.isParallel) {
+                    resultsSection.classList.remove('has-result');
+                    let msg = 'Add at least <strong>2 observations</strong> from different locations to triangulate.';
+                    if (result && result.isParallel) msg = '<strong>⚠️ ' + result.condMessage + '</strong>';
+                    if (observations.length === 1) msg = '<strong>1 observation recorded.</strong> Add at least one more from a different location.';
+                    resultsContent.innerHTML = `<div class="result-empty">${msg}</div>`;
+                    return;
+                }
+
+                resultsSection.classList.add('has-result');
+                const xStr = result.x.toFixed(1), zStr = result.z.toFixed(1);
+                const netherX = Math.floor(result.x / 8);
+                const netherZ = Math.floor(result.z / 8);
+                const netherXStr = netherX.toString();
+                const netherZStr = netherZ.toString();
+                let accuracyClass = 'accuracy-none', accuracyLabel = 'N/A';
+                if (result.error !== null && result.n >= 3) {
+                    const err = result.error;
+                    if (err < 8) accuracyClass = 'accuracy-good';
+                    else if (err < 30) accuracyClass = 'accuracy-ok';
+                    else accuracyClass = 'accuracy-poor';
+                    accuracyLabel = `±${err.toFixed(1)} blocks`;
+                } else if (result.n === 2) {
+                    accuracyLabel = 'Unknown';
+                }
+
+                resultsContent.innerHTML = `
+                    <div class="result-main">
+                        <div class="result-locations">
+                            <div class="result-location-card stronghold-card">
+                                <span class="label-small">Estimated Stronghold (Overworld)</span>
+                                <span class="result-coords">X: ${xStr} &nbsp; Z: ${zStr}</span>
+                            </div>
+                            <div class="result-location-card nether-card">
+                                <span class="label-small">Nether Portal Coordinates</span>
+                                <span class="nether-coords">X: ${netherXStr} &nbsp; Z: ${netherZStr}</span>
+                                <span class="portal-hint">Approximate placement — Overworld X/Z ÷ 8, rounded down</span>
+                            </div>
+                        </div>
+                        <div class="result-accuracy ${accuracyClass}">
+                            ${result.n >= 3 ? '🎯' : '📏'} Accuracy: <strong>${accuracyLabel}</strong>
+                        </div>
+                    </div>
+                    <div class="result-note">
+                        ${result.condMessage}
+                        ${result.rms !== null ? ` (RMS convergence: ${result.rms.toFixed(2)} blocks)` : ''}
+                        ${result.n === 2 ? ' With 2 observations the intersection is exact but real-world angle error means the true stronghold may be some distance away. Add a 3rd observation for an accuracy estimate.' : ''}
+                    </div>
+                `;
+            }
+
+            function updateAll() {
+                updateTable();
+                updateResults();
+                drawCanvas();
+            }
+
+            function addObservation(x, z, angleDeg) {
+                observations.push({
+                    x: parseFloat(x),
+                    z: parseFloat(z),
+                    angleDeg: parseFloat(angleDeg)
+                });
+                updateAll();
+            }
+
+            // ────────────────────────────────────
+            // Event handling with validation feedback
+            // ────────────────────────────────────
+            function handleAdd() {
+                clearValidationErrors();
+                const xVal = inputX.value.trim();
+                const zVal = inputZ.value.trim();
+                const aVal = inputAngle.value.trim();
+
+                const missing = [];
+                if (xVal === '') missing.push(inputX);
+                if (zVal === '') missing.push(inputZ);
+                if (aVal === '') missing.push(inputAngle);
+
+                if (missing.length > 0) {
+                    showValidationErrors(missing);
+                    return;
+                }
+
+                const x = parseFloat(xVal);
+                const z = parseFloat(zVal);
+                const a = parseFloat(aVal);
+                if (isNaN(x) || isNaN(z) || isNaN(a)) {
+                    // Should not happen, but just in case
+                    return;
+                }
+
+                addObservation(x, z, a);
+                inputX.value = '';
+                inputZ.value = '';
+                inputAngle.value = '';
+                inputX.focus();
+            }
+
+            btnAdd.addEventListener('click', handleAdd);
+            [inputX, inputZ, inputAngle].forEach(inp => {
+                inp.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAdd();
+                    }
+                });
+                inp.addEventListener('input', () => inp.classList.remove('input-error'));
+            });
+
+            btnClear.addEventListener('click', () => {
+                if (observations.length === 0) return;
+                if (confirm('Clear all observations?')) {
+                    observations = [];
+                    updateAll();
+                    resultsSection.classList.remove('has-result');
+                    resultsContent.innerHTML = '<div class="result-empty">Add at least <strong>2 observations</strong> from different locations to triangulate the stronghold.</div>';
+                }
+            });
+
+            btnExample.addEventListener('click', () => {
+                if (observations.length > 0 && !confirm('This will replace your current observations. Continue?')) return;
+                observations = [
+                    { x: 500, z: 500, angleDeg: 315 },
+                    { x: 500, z: 1500, angleDeg: 45 },
+                    { x: 1500, z: 1500, angleDeg: 135 },
+                    { x: 1400, z: 400, angleDeg: 250 }
+                ];
+                updateAll();
+            });
+
+            // Resize handling
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(drawCanvas, 150);
+            });
+
+            // Initial render
+            updateAll();
+            inputX.focus();
+        })();
+    </script>
+</body>
+</html>
