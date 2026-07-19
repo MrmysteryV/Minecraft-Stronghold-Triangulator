@@ -1,6 +1,8 @@
 # Minecraft-Stronghold-Triangulator
 A simple website where you input the coordinates and eye angle of at least 2 eyes of ender and it will estimate the location of the nearest stronghold.<br>This was designed so you can more easily find the stronghold without needing to be extremely accurate or installing any extra software like ninjabrain (speedrunning standard)
 
+Link to website: https://mrmysteryv.github.io/Minecraft-Stronghold-Triangulator
+
 <img width="900" height="450" alt="image" src="https://github.com/user-attachments/assets/0a7dec11-51eb-4ca2-8371-f2b5af8c977f" />
 
 ## How to use
