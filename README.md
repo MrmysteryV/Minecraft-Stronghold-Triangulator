@@ -5,6 +5,8 @@ Link to website: https://mrmysteryv.github.io/Minecraft-Stronghold-Triangulator
 
 <img width="900" height="450" alt="image" src="https://github.com/user-attachments/assets/0a7dec11-51eb-4ca2-8371-f2b5af8c977f" />
 
+---
+
 ## How to use
 
 1. Put your X and Z coordinates from the f3 menu into the input fields
@@ -14,3 +16,9 @@ Link to website: https://mrmysteryv.github.io/Minecraft-Stronghold-Triangulator
 <img width="500" height="250" alt="image" src="https://github.com/user-attachments/assets/7c3e93b2-2ee8-498b-956e-eaf0f187aead" />
 
 3. Add the entry and repeat at least once more (3 or more is ideal for more accurate predictions) and go to the coordinates calculated at the bottom.
+
+---
+
+### Transparency notice
+
+This project was used generative AI to streamline development. I believe in transparent use of these tools and I have gone through multiple polishing and testing iterations to make sure the final result is up to a good finished standard.
